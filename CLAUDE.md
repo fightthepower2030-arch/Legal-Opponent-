@@ -25,6 +25,14 @@ Main features:
 - Secure document storage, data export, account deletion, moderation,
   appeals and professional verification.
 
+**Access during testing is invite-only.** Every endpoint calls
+`requireUser` (`server/profile.ts`), which refuses any signed-in user whose
+email is not an active row in the **Tester Allowlist** table
+(`server/testerGate.ts`, `server/testerAccess.ts`). Uninvited users see an
+"Invite-only testing" screen. Testers are added or removed in the Zite
+database, not in code. Removing the gate or changing who can sign in falls
+under rule 4.
+
 ## Where the code lives
 
 The application code is **not in this GitHub repository**. It lives in a
