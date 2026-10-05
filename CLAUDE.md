@@ -164,8 +164,14 @@ These rules override convenience. If a task would breach one, stop and ask.
   (`src/courtStanding.ts`), and each record is listed once.
 - **Fails closed** on network errors, timeouts, non-200 responses, unreadable
   records or any mismatch.
-- **Not yet checked**: whether a source actually supports the proposition it
-  is cited for. The UI says so.
+- **Not yet checked**:
+  - Whether a source actually supports the proposition it is cited for.
+  - A case's later history (appeals, overruling). Every verified case below
+    the Supreme Court carries a warning to confirm it was not overturned.
+  - House of Lords and pre-2001 judgments, which Find Case Law does not
+    hold. BAILII cannot be used as an automated source: it serves a bot
+    challenge, and that must not be circumvented.
+  The UI says so.
 
 ## Sub-agents
 
