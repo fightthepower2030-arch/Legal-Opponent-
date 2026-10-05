@@ -21,7 +21,8 @@ Check, in this order:
    - Secrets, API keys, tokens or personal data in the diff or history.
    - Any legal citation produced from memory or by an LLM rather than
      retrieved from and linked to a verified source; any path where an
-     unverified citation can reach the user.
+     unverified citation can reach the user, including
+     "verification" that only checks a URL's hostname.
    - Material or features for jurisdictions other than England and Wales.
    - Changes to payments or user/opponent data without recorded maintainer
      approval.

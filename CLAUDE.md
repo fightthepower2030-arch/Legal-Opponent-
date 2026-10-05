@@ -1,112 +1,174 @@
 # CLAUDE.md
 
-Guidance for Claude Code (and any other contributor) working in this repository.
+Guidance for Claude Code (and any other contributor) working on this project.
 
 ## What the project does
 
-Legal-Opponent is an AI tool for **litigants in person** (people who conduct
-civil proceedings without a solicitor or barrister) to research the opposing
-party in their case. The README's one-line description is currently
-unfinished ("allows litigants in person to search their Opponents"); its exact
-scope (company records, previous litigation, published judgments, and so on)
-has not yet been written down. Confirm scope with the maintainer before
-building features based on an assumed scope.
+**AI LAW & MORE SOCIAL** (ailawandmoresocial.com) is a platform for
+**litigants in person** (people conducting proceedings in England and Wales
+without a solicitor or barrister). It combines a social network for
+litigants with case-management and legal-research tools. It is currently in
+**testing**, not general release.
 
-## Current state of the repository
+Main features:
 
-As of this file's creation the repository contains only:
+- Social feed, communities, direct messaging, follows, blocks, bookmarks.
+- **Case Rooms**: shared case workspaces with parties, events, issues,
+  propositions, evidence and authorities.
+- **Legal Check**: checks a legal proposition with an AI model and web search
+  restricted to official sources, then verifies every returned citation
+  against the official record (see "Citation verification" below).
+- **Claim-pack extraction**: AI extraction of reviewable fields from uploaded
+  possession claim packs.
+- **OPR engine**: eligibility, deadline and court-centre logic for
+  possession claims (`server/opr.ts`).
+- Secure document storage, data export, account deletion, moderation,
+  appeals and professional verification.
 
-| Path         | Contents                                         |
-|--------------|--------------------------------------------------|
-| `README.md`  | Project title and a one-line (unfinished) description |
-| `LICENSE`    | GNU General Public License v2                    |
-| `CLAUDE.md`  | This file                                        |
-| `.claude/agents/` | Sub-agent definitions (see below)           |
+## Where the code lives
 
-There is **no application code, no package manifest, no tests and no CI** yet.
+The application code is **not in this GitHub repository**. It lives in a
+**Zite** workspace (Zite is a hosted app builder; the workspace is its own git
+repository):
+
+- Workspace: "AI LAW & MORE SOCIAL" (id `c849de3ab3e6804d`)
+- Apps:
+  - `apps/ai-law-more-social`: the public site (Zite app id `6r4oyh1fjg`)
+  - `apps/ai-law-more-control`: the staff/admin console for moderation, appeals,
+    professional review and staff roles (Zite app id `wgzexrsnpu`)
+
+Work on the app through the Zite tools (sandbox → edit → `check_app` →
+`commit`). Never `git commit`/`git push` inside the Zite sandbox; use its
+`commit` tool. **Committing does not publish**: the live site only changes
+on `publish_app`, which requires the maintainer's explicit go-ahead.
+
+This GitHub repository holds the project's Claude Code configuration
+(this file and `.claude/agents/`), plus the README and licence.
 
 ## Tech stack
 
-**Not yet chosen.** Nothing in the repository commits to a language,
-framework, database or hosting platform. When a stack is chosen, update this
-section with: language and version, framework, package manager, database,
-LLM provider/SDK, and hosting target.
+- **ZiteJS** 0.9.x (pinned in the root `package.json`): React + TypeScript +
+  Vite front end, with typed backend endpoints.
+- **UI**: Tailwind CSS, shadcn/ui (`packages/components`), lucide-react.
+- **Database**: Zite's hosted Postgres, accessed via `import { zite } from
+  "zitejs/db"` (typed client in `.zite/db.ts`; raw SQL via `zite.sql()` with
+  `$n` parameters only).
+- **Integrations** (configured in the root `zite.config.json`):
+  - `openai`: Legal Check and claim-pack extraction
+  - `googleDrive`: secure document storage
+- **Tests**: vitest.
 
-## How to run and test
+## How to run and test (inside the Zite sandbox, from `/workspace`)
 
-**No run or test commands exist yet.** When the first code lands, record here:
+| Task | Command |
+|---|---|
+| Unit tests | `npx vitest run` (or `npm test`) |
+| One test file | `npx vitest run apps/ai-law-more-social/src/server/<file>.test.ts` |
+| Typecheck and endpoint bundling | Zite `check_app` tool (or `npm run typecheck`) |
+| Regenerate the API typings after adding or renaming endpoints | `npx zitejs generate` (run from `/workspace`) |
+| Preview | Zite editor, via the `editorUrl` returned by `commit` |
+| Runtime debugging | Zite `get_logs`; `run_one_off_script` for probing the runtime |
 
-- install command (e.g. dependency install)
-- run / dev-server command
-- test command (and how to run a single test)
-- lint / format / typecheck commands
+Note: vitest only picks up `*.test.ts`. The files `opr.selftest.ts` and
+`fileValidation.selftest.ts` do **not** run in `npm test`.
 
-Do not invent commands in this file; only document ones that actually work in
-the repository.
+## Folder structure (public app)
 
-## Folder structure
+```
+apps/ai-law-more-social/
+  src/App.tsx              root UI component
+  src/components/          feature panels (Case Intelligence, Digital Twin, OPR, Claim Pack, public legal pages)
+  src/api/*.ts             one backend endpoint per file (createEndpoint + zod schemas)
+  src/server/*.ts          shared server logic (auth/profile, case access, OPR, moderation,
+                           rate limits, drive storage, citation verification) and tests
+  zite.config.json         per-app config (accessMode, integration settings)
+packages/components/       shared shadcn/ui design system
+.zite/                     generated SDKs; never edit
+```
 
-Only the root files listed above exist. Record the layout here once the first
-code is added (for example `src/`, `tests/`, `docs/`).
+## Coding conventions (observed)
 
-## Coding conventions
-
-No code exists yet, so there are no observed conventions. Until the stack is
-chosen, follow these defaults:
-
-- Keep changes small and focused; one concern per commit.
-- Every new feature ships with tests.
-- Configuration and secrets come from environment variables (with a committed
-  `.env.example` listing names only, never values).
-- Licence: the project is GPL-2.0. Any dependency added must be licence-compatible
-  with GPL-2.0 (note that Apache-2.0 is generally regarded as incompatible with
-  GPL-2.0-only); check before adding.
+- One endpoint per file in `src/api/`, default-exporting `createEndpoint`
+  with zod `inputSchema` and `outputSchema`.
+- Every endpoint that touches user data starts with `requireUser(context)` or
+  `getOrCreateProfile(context)`; Case Room endpoints call
+  `requireCaseRoomAccess(context, roomId)`.
+- AI features enforce per-user hourly and daily limits via the `AiUsage`
+  table and record Started, Completed and Failed outcomes.
+- User-supplied text sent to a model is fenced as untrusted, and prompts tell
+  the model to ignore embedded instructions.
+- Shared logic belongs in `src/server/`, with a colocated `*.test.ts`.
+- External services are mocked in tests; no live network calls in `npm test`.
+- Compact style: two-space indentation and terse expressions, matching the
+  existing files.
 
 ## Rules (mandatory)
 
 These rules override convenience. If a task would breach one, stop and ask.
 
-1. **England and Wales only.** The app serves the jurisdiction of England and
-   Wales. Do not add features, content, data sources, court lists or legal
-   material for Scotland, Northern Ireland or any other jurisdiction. Where a
-   source covers several UK jurisdictions (e.g. legislation.gov.uk, Companies
-   House), filter or label so users are only given material applicable in
-   England and Wales, and make the extent of any statute clear.
+1. **England and Wales only.** Do not add features, content, data sources or
+   legal material for Scotland, Northern Ireland or any other jurisdiction.
+   Where a source covers several jurisdictions, check its extent and exclude
+   or label material that does not apply in England and Wales.
 2. **Legal citations must come from a verified source, never from memory.**
-   Any case name, neutral citation, law-report reference, statute, section or
-   procedural rule that the app outputs must be retrieved from, and linked to,
-   an authoritative source at runtime (for example legislation.gov.uk, The
-   National Archives' Find Case Law, or the Civil Procedure Rules on
-   justice.gov.uk). An LLM must never be allowed to generate a citation from
-   its own training data. If a citation cannot be verified, the app must say
-   so rather than output it. The same applies to Claude when writing code,
-   fixtures, prompts or documentation: do not write real-looking legal
-   citations from memory; use clearly fictitious placeholders in tests or
-   fetch and verify the real source.
-3. **Never commit secrets or API keys.** No keys, tokens, passwords,
-   connection strings or personal data in code, tests, fixtures, commit
-   messages or documentation. Use environment variables and keep `.env*`
-   files (other than `.env.example`) out of git.
-4. **Ask before changing anything touching payments or user data.** Any change
-   to payment flows, billing, pricing, user accounts, authentication,
-   personal data storage, retention, or data about opponents (who are third
-   parties and data subjects in their own right) requires explicit approval
-   from the maintainer before it is made.
+   This applies both to what the app outputs and to anything Claude writes
+   (code, prompts, fixtures, docs):
+   - A case or legislation reference the app shows as authority must have
+     been matched against the official record at runtime
+     (`server/citationVerification.ts`).
+   - Anything that cannot be matched is withheld and labelled unverified.
+     It must never be shown as authority.
+   - Checking the URL host alone is **not** verification.
+   - Tests use clearly fictitious parties, or real records fetched from the
+     official source, never citations recalled from memory.
+3. **Never commit secrets or API keys.** Integration credentials are injected
+   by Zite (`ZITE_*` env vars). User-supplied secrets are declared under
+   `envVars` in the app's `zite.config.json`, and the maintainer sets their
+   values in the Zite editor. `.env.local` stays gitignored.
+4. **Ask before changing anything touching payments or user data.** That
+   covers payments and billing, accounts and authentication, personal-data
+   storage, export and erasure, retention, access modes, and data about
+   opponents and other case parties (third parties with their own data
+   protection rights). Get explicit approval from the maintainer first.
+5. **Never publish without approval.** Commit to preview; only `publish_app`
+   when the maintainer says so.
+
+## Citation verification (how it works)
+
+`apps/ai-law-more-social/src/server/citationVerification.ts`:
+
+- **Cases**:
+  - Parses the neutral citation (UKSC, UKPC, EWCA, EWHC, EWFC, EWCOP, UKUT,
+    EAT) and builds the canonical Find Case Law address. The model's URL is
+    ignored.
+  - Fetches `<address>/data.xml` and requires the official citation, year,
+    court family and case name to match.
+  - Citations that can't be checked automatically, such as House of Lords and
+    pre-2001 cases, are unverified and must be checked manually.
+- **Legislation**:
+  - legislation.gov.uk only. Requests need a user-agent header or the site
+    refuses them.
+  - Fetches `data.xml` and requires the title and provision to match, and
+    the extent to include E or W.
+- **Fails closed** on network errors, timeouts, non-200 responses, unreadable
+  records or any mismatch.
+- **Not yet checked**: whether a source actually supports the proposition it
+  is cited for. The UI says so.
 
 ## Sub-agents
 
 Defined in `.claude/agents/`:
 
-| Agent        | Role                                                         |
-|--------------|--------------------------------------------------------------|
-| `builder`    | Implements features and fixes                                |
-| `reviewer`   | Reviews diffs with fresh eyes; never reviews its own work and never edits |
-| `tester`     | Writes and runs tests                                        |
-| `researcher` | Reads documentation and evaluates libraries/data sources; read-only |
+| Agent | Role |
+|---|---|
+| `builder` | Implements features and fixes |
+| `reviewer` | Reviews diffs with fresh eyes; never reviews its own work and never edits |
+| `tester` | Writes and runs tests |
+| `researcher` | Reads documentation and evaluates libraries and data sources; read-only |
 
 Typical flow: `researcher` → `builder` → `tester` → `reviewer`. The reviewer
 must be a separate invocation from whichever agent wrote the change.
 
-## Git
+## Git (this repository)
 
-- Never commit directly to `main`; work on a feature branch and open a PR.
+Never commit directly to `main`; work on a feature branch and open a PR.

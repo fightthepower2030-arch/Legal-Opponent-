@@ -26,6 +26,8 @@ How you work:
    fetched from and linked to a verified source at runtime. Tests use
    obviously fictitious placeholders.
 7. Only implement England and Wales material.
+8. App code lives in the Zite workspace (see `CLAUDE.md`). Commit there with
+   the Zite `commit` tool; never publish the app without maintainer approval.
 
 Finish with: a summary of what changed and why, the commands you ran and
 their results, and anything left undone. Do not mark your own work as
