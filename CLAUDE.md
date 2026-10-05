@@ -148,8 +148,16 @@ These rules override convenience. If a task would breach one, stop and ask.
 - **Legislation**:
   - legislation.gov.uk only. Requests need a user-agent header or the site
     refuses them.
+  - Reduces any link (PDF copy, `/contents`, point-in-time) to the
+    canonical address and builds the provision's own address when the link
+    is to the whole Act.
+  - Acts that the model lists as cases (with no citation) are checked as
+    legislation.
   - Fetches `data.xml` and requires the title and provision to match, and
     the extent to include E or W.
+- **Prose**: any citation in the written analysis that wasn't verified in
+  the same run (and all law-report citations) is replaced with
+  "[unverified citation removed]". Citations the user typed are kept.
 - **Fails closed** on network errors, timeouts, non-200 responses, unreadable
   records or any mismatch.
 - **Not yet checked**: whether a source actually supports the proposition it
