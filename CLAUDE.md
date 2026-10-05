@@ -158,6 +158,10 @@ These rules override convenience. If a task would breach one, stop and ask.
 - **Prose**: any citation in the written analysis that wasn't verified in
   the same run (and all law-report citations) is replaced with
   "[unverified citation removed]". Citations the user typed are kept.
+  Withheld cases mentioned by name only are marked "[unverified]".
+- **Display**: verified cases appear under "CASE LAW (VERIFIED)", with a
+  court and precedent label derived from the citation
+  (`src/courtStanding.ts`), and each record is listed once.
 - **Fails closed** on network errors, timeouts, non-200 responses, unreadable
   records or any mismatch.
 - **Not yet checked**: whether a source actually supports the proposition it
